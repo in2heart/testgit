@@ -48,7 +48,8 @@ async function handleEvent(event) {
 
     // เรียก Stack AI API (แก้ไข URL)
     const response = await axios.post(
-      `https://www.stack-ai.com/api/v7/run/${STACK_AI_FLOW_ID}`,
+      // `https://www.stack-ai.com/api/v7/run/${STACK_AI_FLOW_ID}`,
+      `https://api.stack-ai.com/inference/v7/run/3b4e412a-5451-44f0-8bfb-007dcde6f15c/699da919279f002824f43dd3`,
       { 
         'in-0': userMessage
       },
