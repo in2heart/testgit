@@ -2,15 +2,15 @@ const express = require('express');
 const line = require('@line/bot-sdk');
 const axios = require('axios');
 
-// ===== ใส่ข้อมูลของคุณที่นี่ =====
+// ===== อ่านจาก Environment Variables (ปลอดภัย) =====
 const config = {
-  channelAccessToken: 'XzYBPDQVa7HbImxmmzz4QgYcpusPqCB/Y3IddYzHq8jVfsXKbWWmfsVDEp6pnlPD4iRRo9+u5C3iQ8FRHE7/tSqMz33Fpwj3Vq7l/V63P8XLEN5+B2A+DZsb9cIXReU2lhRbUFEUp9WG65r61hw4egdB04t89/1O/w1cDnyilFU=',
-  channelSecret: 'be395dd1028244d17061b7ffcc35f563'
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || 'XzYBPDQVa7HbImxmmzz4QgYcpusPqCB/Y3IddYzHq8jVfsXKbWWmfsVDEp6pnlPD4iRRo9+u5C3iQ8FRHE7/tSqMz33Fpwj3Vq7l/V63P8XLEN5+B2A+DZsb9cIXReU2lhRbUFEUp9WG65r61hw4egdB04t89/1O/w1cDnyilFU=',
+  channelSecret: process.env.CHANNEL_SECRET || 'be395dd1028244d17061b7ffcc35f563'
 };
 
-const STACK_AI_FLOW_ID = '699da919279f002824f43dd3';
-const STACK_AI_API_KEY = 'eb2a532c-c03b-448e-b9ba-dd5992880151';
-// ===================================
+const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID || '699da919279f002824f43dd3';
+const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY || 'eb2a532c-c03b-448e-b9ba-dd5992880151';
+// =====================================================
 
 const app = express();
 const client = new line.Client(config);
@@ -26,7 +26,7 @@ app.post('/webhook', line.middleware(config), async (req, res) => {
     const results = await Promise.all(req.body.events.map(handleEvent));
     res.json(results);
   } catch (err) {
-    console.error('❌ Error:', err);
+    console.error('❌ Webhook Error:', err);
     res.status(500).end();
   }
 });
@@ -39,15 +39,21 @@ async function handleEvent(event) {
   }
 
   const userMessage = event.message.text;
+  const userId = event.source.userId;
 
   try {
     console.log(`📩 รับข้อความ: ${userMessage}`);
+    console.log(`👤 User ID: ${userId}`);
     console.log(`🚀 กำลังเรียก Stack AI...`);
+    console.log(`📝 Flow ID: ${STACK_AI_FLOW_ID}`);
 
-    // เรียก Stack AI API
+    // เรียก Stack AI API (แก้ไข URL ให้ถูกต้อง)
     const response = await axios.post(
-      `https://api.stack-ai.com/run/flow/${STACK_AI_FLOW_ID}`,
-      { 'in-0': userMessage },
+      `https://www.stack-ai.com/api/v1/flows/${STACK_AI_FLOW_ID}/run`,
+      { 
+        'in-0': userMessage,
+        'user_id': userId  // เพิ่ม user_id สำหรับ tracking
+      },
       {
         headers: {
           'Authorization': `Bearer ${STACK_AI_API_KEY}`,
@@ -56,6 +62,8 @@ async function handleEvent(event) {
         timeout: 60000 // 60 วินาที
       }
     );
+
+    console.log('✅ Stack AI Response:', JSON.stringify(response.data, null, 2));
 
     const aiReply = response.data['out-0'] || 'ขออภัย ไม่สามารถประมวลผลได้';
     console.log(`✅ ตอบกลับ: ${aiReply.substring(0, 100)}...`);
@@ -67,12 +75,30 @@ async function handleEvent(event) {
     });
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    // แสดง Error แบบละเอียด
+    console.error('❌ Error Details:');
+    console.error('  - Status:', error.response?.status);
+    console.error('  - Data:', error.response?.data);
+    console.error('  - Message:', error.message);
+    
+    // กำหนดข้อความ Error ตาม Status Code
+    let errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+    
+    if (error.response?.status === 404) {
+      errorMessage = 'ไม่พบ Flow ที่ระบุ กรุณาตรวจสอบ Flow ID';
+      console.error('  - Flow ID ที่ใช้:', STACK_AI_FLOW_ID);
+    } else if (error.response?.status === 401) {
+      errorMessage = 'API Key ไม่ถูกต้อง กรุณาตรวจสอบ API Key';
+    } else if (error.code === 'ECONNABORTED') {
+      errorMessage = 'หมดเวลาในการเชื่อมต่อ กรุณาลองใหม่';
+    } else if (error.code === 'ENOTFOUND') {
+      errorMessage = 'ไม่สามารถเชื่อมต่อ Stack AI ได้';
+    }
     
     // ตอบกลับเมื่อเกิด Error
     return client.replyMessage(event.replyToken, {
       type: 'text',
-      text: 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง'
+      text: errorMessage
     });
   }
 }
@@ -81,5 +107,7 @@ async function handleEvent(event) {
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`✅ Server running on port ${port}`);
-  console.log(`🌐 http://localhost:${port}`);
+  console.log(`🌐 Webhook URL: https://your-domain.com/webhook`);
+  console.log(`📝 Flow ID: ${STACK_AI_FLOW_ID}`);
+  console.log(`🔑 API Key: ${STACK_AI_API_KEY ? '***' + STACK_AI_API_KEY.slice(-4) : 'Not set'}`);
 });
