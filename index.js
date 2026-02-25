@@ -4,13 +4,20 @@ const axios = require('axios');
 
 // ===== อ่านจาก Environment Variables =====
 const config = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || 'XzYBPDQVa7HbImxmmzz4QgYcpusPqCB/Y3IddYzHq8jVfsXKbWWmfsVDEp6pnlPD4iRRo9+u5C3iQ8FRHE7/tSqMz33Fpwj3Vq7l/V63P8XLEN5+B2A+DZsb9cIXReU2lhRbUFEUp9WG65r61hw4egdB04t89/1O/w1cDnyilFU=',
-  channelSecret: process.env.CHANNEL_SECRET || 'be395dd1028244d17061b7ffcc35f563'
+  // channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || 'XzYBPDQVa7HbImxmmzz4QgYcpusPqCB/Y3IddYzHq8jVfsXKbWWmfsVDEp6pnlPD4iRRo9+u5C3iQ8FRHE7/tSqMz33Fpwj3Vq7l/V63P8XLEN5+B2A+DZsb9cIXReU2lhRbUFEUp9WG65r61hw4egdB04t89/1O/w1cDnyilFU=',
+  // channelSecret: process.env.CHANNEL_SECRET || 'be395dd1028244d17061b7ffcc35f563'
+
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.CHANNEL_SECRET
 };
 
-const STACK_AI_ORG_ID = process.env.STACK_AI_ORG_ID || '3b4e412a-5451-44f0-8bfb-007dcde6f15c';
-const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID || '699da919279f002824f43dd3';
-const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY || 'eb2a532c-c03b-448e-b9ba-dd5992880151';
+// const STACK_AI_ORG_ID = process.env.STACK_AI_ORG_ID || '3b4e412a-5451-44f0-8bfb-007dcde6f15c';
+// const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID || '699da919279f002824f43dd3';
+// const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY || 'sk_tKOgVXY5MHiOzV9Veets4sVTzgPk2EnkkIiqnB89n7Q';
+
+const STACK_AI_ORG_ID = process.env.STACK_AI_ORG_ID;
+const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID;
+const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY;
 // =====================================================
 
 const app = express();
