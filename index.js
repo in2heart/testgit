@@ -8,6 +8,7 @@ const config = {
   channelSecret: process.env.CHANNEL_SECRET || 'be395dd1028244d17061b7ffcc35f563'
 };
 
+const STACK_AI_ORG_ID = process.env.STACK_AI_ORG_ID || '3b4e412a-5451-44f0-8bfb-007dcde6f15c';
 const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID || '699da919279f002824f43dd3';
 const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY || 'eb2a532c-c03b-448e-b9ba-dd5992880151';
 // =====================================================
@@ -15,12 +16,10 @@ const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY || 'eb2a532c-c03b-448e-b9b
 const app = express();
 const client = new line.Client(config);
 
-// หน้าแรก
 app.get('/', (req, res) => {
   res.send('LINE Bot is running! 🤖');
 });
 
-// Webhook
 app.post('/webhook', line.middleware(config), async (req, res) => {
   try {
     const results = await Promise.all(req.body.events.map(handleEvent));
@@ -31,7 +30,6 @@ app.post('/webhook', line.middleware(config), async (req, res) => {
   }
 });
 
-// ฟังก์ชันจัดการข้อความ
 async function handleEvent(event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
     return null;
@@ -44,20 +42,23 @@ async function handleEvent(event) {
     console.log(`📩 รับข้อความ: ${userMessage}`);
     console.log(`👤 User ID: ${userId}`);
     console.log(`🚀 กำลังเรียก Stack AI...`);
+    console.log(`📝 ORG_ID: ${STACK_AI_ORG_ID}`);
     console.log(`📝 Flow ID: ${STACK_AI_FLOW_ID}`);
 
-    // เรียก Stack AI API (แก้ไข URL)
+    // ใช้ API v0 (ไม่ใช่ v7)
+    const apiUrl = `https://api.stack-ai.com/inference/v0/run/${STACK_AI_ORG_ID}/${STACK_AI_FLOW_ID}`;
+    console.log(`🌐 API URL: ${apiUrl}`);
+
     const response = await axios.post(
-      // `https://www.stack-ai.com/api/v7/run/${STACK_AI_FLOW_ID}`,
-      `https://api.stack-ai.com/inference/v7/run/3b4e412a-5451-44f0-8bfb-007dcde6f15c/699da919279f002824f43dd3`,
+      apiUrl,
       { 
-        'in-0': userMessage
+        'in-0': userMessage,
+        'user_id': userId
       },
       {
         headers: {
           'Authorization': `Bearer ${STACK_AI_API_KEY}`,
-          'Content-Type': 'application/json',
-          'X-User-ID': userId
+          'Content-Type': 'application/json'
         },
         timeout: 60000
       }
@@ -83,13 +84,12 @@ async function handleEvent(event) {
     let errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
     
     if (error.response?.status === 404) {
-      errorMessage = 'ไม่พบ Flow ที่ระบุ กรุณาตรวจสอบ Flow ID';
+      errorMessage = 'ไม่พบ Flow ที่ระบุ กรุณาตรวจสอบ API Endpoint';
+      console.error('  💡 Hint: ตรวจสอบว่าใช้ API Version ที่ถูกต้อง (v0 หรือ v1)');
     } else if (error.response?.status === 401) {
-      errorMessage = 'API Key ไม่ถูกต้อง กรุณาตรวจสอบ API Key';
+      errorMessage = 'API Key ไม่ถูกต้อง';
     } else if (error.response?.status === 405) {
-      errorMessage = 'API Endpoint ไม่ถูกต้อง กำลังแก้ไข...';
-    } else if (error.code === 'ECONNABORTED') {
-      errorMessage = 'หมดเวลาในการเชื่อมต่อ กรุณาลองใหม่';
+      errorMessage = 'API Method ไม่ถูกต้อง';
     }
     
     return client.replyMessage(event.replyToken, {
@@ -99,10 +99,10 @@ async function handleEvent(event) {
   }
 }
 
-// เริ่ม Server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`✅ Server running on port ${port}`);
+  console.log(`📝 ORG_ID: ${STACK_AI_ORG_ID}`);
   console.log(`📝 Flow ID: ${STACK_AI_FLOW_ID}`);
   console.log(`🔑 API Key: ${STACK_AI_API_KEY ? '***' + STACK_AI_API_KEY.slice(-4) : 'Not set'}`);
 });
