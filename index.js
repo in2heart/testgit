@@ -11,6 +11,7 @@ const config = {
   channelSecret: process.env.CHANNEL_SECRET
 };
 
+
 // const STACK_AI_ORG_ID = process.env.STACK_AI_ORG_ID || '3b4e412a-5451-44f0-8bfb-007dcde6f15c';
 // const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID || '699da919279f002824f43dd3';
 // const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY || 'sk_tKOgVXY5MHiOzV9Veets4sVTzgPk2EnkkIiqnB89n7Q';
