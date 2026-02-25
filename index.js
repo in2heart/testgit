@@ -4,20 +4,13 @@ const axios = require('axios');
 
 // ===== อ่านจาก Environment Variables =====
 const config = {
-  // channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || 'XzYBPDQVa7HbImxmmzz4QgYcpusPqCB/Y3IddYzHq8jVfsXKbWWmfsVDEp6pnlPD4iRRo9+u5C3iQ8FRHE7/tSqMz33Fpwj3Vq7l/V63P8XLEN5+B2A+DZsb9cIXReU2lhRbUFEUp9WG65r61hw4egdB04t89/1O/w1cDnyilFU=',
-  // channelSecret: process.env.CHANNEL_SECRET || 'be395dd1028244d17061b7ffcc35f563'
-
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
-  channelSecret: process.env.CHANNEL_SECRET
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || 'XzYBPDQVa7HbImxmmzz4QgYcpusPqCB/Y3IddYzHq8jVfsXKbWWmfsVDEp6pnlPD4iRRo9+u5C3iQ8FRHE7/tSqMz33Fpwj3Vq7l/V63P8XLEN5+B2A+DZsb9cIXReU2lhRbUFEUp9WG65r61hw4egdB04t89/1O/w1cDnyilFU=',
+  channelSecret: process.env.CHANNEL_SECRET || 'be395dd1028244d17061b7ffcc35f563'
 };
 
-// const STACK_AI_ORG_ID = process.env.STACK_AI_ORG_ID || '3b4e412a-5451-44f0-8bfb-007dcde6f15c';
-// const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID || '699da919279f002824f43dd3';
-// const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY || 'sk_tKOgVXY5MHiOzV9Veets4sVTzgPk2EnkkIiqnB89n7Q';
-
-const STACK_AI_ORG_ID = process.env.STACK_AI_ORG_ID;
-const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID;
-const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY;
+const STACK_AI_ORG_ID = process.env.STACK_AI_ORG_ID || '3b4e412a-5451-44f0-8bfb-007dcde6f15c';
+const STACK_AI_FLOW_ID = process.env.STACK_AI_FLOW_ID || '699da919279f002824f43dd3';
+const STACK_AI_API_KEY = process.env.STACK_AI_API_KEY || 'eb2a532c-c03b-448e-b9ba-dd5992880151';
 // =====================================================
 
 const app = express();
@@ -52,7 +45,6 @@ async function handleEvent(event) {
     console.log(`📝 ORG_ID: ${STACK_AI_ORG_ID}`);
     console.log(`📝 Flow ID: ${STACK_AI_FLOW_ID}`);
 
-    // ใช้ API v0 (ไม่ใช่ v7)
     const apiUrl = `https://api.stack-ai.com/inference/v0/run/${STACK_AI_ORG_ID}/${STACK_AI_FLOW_ID}`;
     console.log(`🌐 API URL: ${apiUrl}`);
 
@@ -73,7 +65,9 @@ async function handleEvent(event) {
 
     console.log('✅ Stack AI Response:', JSON.stringify(response.data, null, 2));
 
-    const aiReply = response.data['out-0'] || response.data.output || 'ขออภัย ไม่สามารถประมวลผลได้';
+    // แก้ไข: ดึงข้อมูลจาก outputs.out-0
+    const aiReply = response.data.outputs?.['out-0'] || response.data['out-0'] || 'ขออภัย ไม่สามารถประมวลผลได้';
+    
     console.log(`✅ ตอบกลับ: ${aiReply.substring(0, 100)}...`);
 
     return client.replyMessage(event.replyToken, {
@@ -92,11 +86,12 @@ async function handleEvent(event) {
     
     if (error.response?.status === 404) {
       errorMessage = 'ไม่พบ Flow ที่ระบุ กรุณาตรวจสอบ API Endpoint';
-      console.error('  💡 Hint: ตรวจสอบว่าใช้ API Version ที่ถูกต้อง (v0 หรือ v1)');
     } else if (error.response?.status === 401) {
       errorMessage = 'API Key ไม่ถูกต้อง';
     } else if (error.response?.status === 405) {
       errorMessage = 'API Method ไม่ถูกต้อง';
+    } else if (error.code === 'ECONNABORTED') {
+      errorMessage = 'หมดเวลาในการเชื่อมต่อ กรุณาลองใหม่';
     }
     
     return client.replyMessage(event.replyToken, {
